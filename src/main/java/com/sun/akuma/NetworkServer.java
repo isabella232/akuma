@@ -39,8 +39,6 @@ import java.util.Collections;
 import java.util.Arrays;
 
 import static com.sun.akuma.CLibrary.LIBC;
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
 
 /**
  * Multi-process network server that accepts connections on the same TCP port.
@@ -163,13 +161,12 @@ public abstract class NetworkServer extends Daemon {
         }
 
         // when we are killed, kill all the worker processes, too.
-        Signal.handle(new Signal("TERM"),
-            new SignalHandler() {
-                public void handle(Signal sig) {
-                    LIBC.kill(0,SIGTERM);
-                    System.exit(-1);
-                }
-            });
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void run() {
+                LIBC.kill(0, SIGTERM);
+                System.exit(-1);
+            }
+        });
 
         // hang forever
         Object o = new Object();
