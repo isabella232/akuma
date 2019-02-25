@@ -26,7 +26,6 @@ package com.sun.akuma;
 import com.sun.jna.Memory;
 import com.sun.jna.Native;
 import com.sun.jna.NativeLong;
-import com.sun.jna.StringArray;
 import static com.sun.akuma.CLibrary.LIBC;
 
 import java.io.FileWriter;
@@ -126,24 +125,12 @@ public class Daemon {
         // let the child process now that it's a daemon
         args.setSystemProperty(Daemon.class.getName(),"daemonized");
 
-        // prepare for a fork
-        String exe = getCurrentExecutable();
-        StringArray sa = args.toStringArray();
-
-        int i = LIBC.fork();
-        if(i<0) {
-            LIBC.perror("initial fork failed");
+        try {
+            new ProcessBuilder().inheritIO().command(args).start();
+        } catch (IOException e) {
+            System.err.println("daemonize failed");
             System.exit(-1);
         }
-        if(i==0) {
-            // with fork, we lose all the other critical threads, to exec to Java again
-            LIBC.execv(exe,sa);
-            System.err.println("exec failed");
-            LIBC.perror("initial exec failed");
-            System.exit(-1);
-        }
-
-        // parent exits
     }
 
     /**
